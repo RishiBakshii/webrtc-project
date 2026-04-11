@@ -20,7 +20,7 @@ interface SocketContextValue {
   disconnectSocket: () => void
 }
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
+const SOCKET_URL =  import.meta.env.VITE_SOCKET_URL
 const SocketContext = createContext<SocketContextValue | undefined>(undefined)
 
 export const SocketProvider = ({ children }: PropsWithChildren) => {
