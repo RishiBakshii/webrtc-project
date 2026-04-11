@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import type { Socket } from 'socket.io-client'
 import { peer } from '../lib/webrtc/peer'
 import { SOCKET_EVENTS } from '../socket/events'
+import toast from 'react-hot-toast'
 
 type WebRtcIceCandidatePayload = {
   roomId: string
@@ -17,7 +18,9 @@ export const useWebRtcIceCandidate = (socket: Socket | null) => {
 
     const handleWebRtcIceCandidate = (payload: WebRtcIceCandidatePayload) => {
       void (async () => {
+        console.log('Remote WEBRTC_ICE_CANDIDATE received:', payload)
         await peer.peer?.addIceCandidate(new RTCIceCandidate(payload.candidate))
+        toast.success(`Remote ICE candidate received from ${payload.fromUser.username}`)
       })()
     }
 

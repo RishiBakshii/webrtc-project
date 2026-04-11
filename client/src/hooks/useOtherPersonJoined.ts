@@ -1,8 +1,7 @@
 import { useEffect } from 'react'
-import type { Socket } from 'socket.io-client'
 import toast from 'react-hot-toast'
+import type { Socket } from 'socket.io-client'
 import { peer } from '../lib/webrtc/peer'
-import { ensureLocalMediaStream } from '../lib/webrtc/localMedia'
 import { SOCKET_EVENTS } from '../socket/events'
 
 type OtherPersonJoinedPayload = {
@@ -11,7 +10,12 @@ type OtherPersonJoinedPayload = {
   user: { userId: string; username: string; email: string }
 }
 
-export const useOtherPersonJoined = (socket: Socket | null, setRemoteSocketId: (socketId: string) => void, setRemoteUser: (user: { userId: string; username: string; email: string }) => void) => {
+export const useOtherPersonJoined = (
+  socket: Socket | null,
+  setRemoteSocketId: (socketId: string) => void,
+  setRemoteUser: (user: { userId: string; username: string; email: string }) => void,
+  myStream: MediaStream | null,
+) => {
   useEffect(() => {
     if (!socket) return
 
@@ -19,9 +23,15 @@ export const useOtherPersonJoined = (socket: Socket | null, setRemoteSocketId: (
       toast.success(`${payload.user.username} joined room ${payload.roomId}`)
       setRemoteSocketId(payload.joinedSocketId)
       setRemoteUser(payload.user)
+
+      if (!myStream) {
+        toast.error('Local camera and microphone are not ready yet.')
+        toast.error("Sending you back to lobby screen, please reload the page")
+        return
+      }
+
       void (async () => {
-        const localStream = await ensureLocalMediaStream()
-        await peer.attachLocalStream(localStream)
+        await peer.attachLocalStream(myStream)
 
         const offer = await peer.getOffer()
         if (!offer) {
@@ -34,6 +44,7 @@ export const useOtherPersonJoined = (socket: Socket | null, setRemoteSocketId: (
           toSocketId: payload.joinedSocketId,
           offer,
         })
+        toast.success(`You have sent your offer to ${payload.user.username} successfully`)
       })()
     }
 
@@ -42,5 +53,5 @@ export const useOtherPersonJoined = (socket: Socket | null, setRemoteSocketId: (
     return () => {
       socket.off(SOCKET_EVENTS.OTHER_PERSON_JOINED, handleOtherPersonJoined)
     }
-  }, [socket])
+  }, [socket, myStream])
 }

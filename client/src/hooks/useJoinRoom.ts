@@ -5,19 +5,17 @@ import { SOCKET_EVENTS } from '../socket/events'
 type UseJoinRoomParams = {
   roomId?: string
   socket: Socket | null
-  isConnected: boolean
-  connectSocket: () => void
+  /** When false, skip joining the Socket.IO room (e.g. pre-join lobby). Connection is handled by SocketProvider. */
+  initiateConnection?: boolean
 }
 
-export const useJoinRoom = ({ roomId, socket, isConnected, connectSocket }: UseJoinRoomParams) => {
+export const useJoinRoom = ({
+  roomId,
+  socket,
+  initiateConnection = true,
+}: UseJoinRoomParams) => {
   useEffect(() => {
-    if (!roomId) return
-
-    if (!isConnected) {
-      connectSocket()
-      return
-    }
-
-    socket?.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId })
-  }, [roomId, socket, isConnected, connectSocket])
+    if (!initiateConnection || !roomId || !socket) return
+    socket.emit(SOCKET_EVENTS.JOIN_ROOM, { roomId })
+  }, [roomId, socket, initiateConnection])
 }

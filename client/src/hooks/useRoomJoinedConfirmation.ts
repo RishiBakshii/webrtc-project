@@ -10,7 +10,7 @@ export const useRoomJoinedConfirmation = (socket: Socket | null) => {
     if (!socket) return
 
     const handleRoomJoinedConfirmation = (payload: RoomJoinedPayload) => {
-      toast.success(`Joined room: ${payload.roomId}`)
+      toast.success(`You have joined the room ${payload.roomId} successfully`)
     }
 
     socket.on(SOCKET_EVENTS.ROOM_JOINED_CONFIRMATION, handleRoomJoinedConfirmation)

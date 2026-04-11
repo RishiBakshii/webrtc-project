@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { peer } from '../lib/webrtc/peer'
 
-export const useRemoteTrackListener = () => {
+type UseRemoteTrackListenerParams = {
+  /** When set, re-bind listeners after RTCPeerConnection exists (e.g. joiner after offer). */
+  remoteSocketId: string | null
+}
+
+export const useRemoteTrackListener = ({ remoteSocketId }: UseRemoteTrackListenerParams) => {
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null)
   const [remoteAudioStream, setRemoteAudioStream] = useState<MediaStream | null>(null)
   const [remoteVideoStream, setRemoteVideoStream] = useState<MediaStream | null>(null)
@@ -30,7 +35,7 @@ export const useRemoteTrackListener = () => {
     return () => {
       peer.peer?.removeEventListener('track', handleRemoteStream)
     }
-  }, [handleRemoteStream])
+  }, [handleRemoteStream, remoteSocketId])
 
   return { remoteStream, remoteAudioStream, remoteVideoStream }
 }

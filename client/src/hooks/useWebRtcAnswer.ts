@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
-import type { Socket } from 'socket.io-client'
 import toast from 'react-hot-toast'
+import type { Socket } from 'socket.io-client'
 import { peer } from '../lib/webrtc/peer'
 import { SOCKET_EVENTS } from '../socket/events'
 
