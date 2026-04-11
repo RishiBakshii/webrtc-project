@@ -1,9 +1,17 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/auth.context'
 import { useRoom } from '../context/room.context'
 import { useSocket } from '../context/socket.context'
 import { Navbar } from '../components/Navbar'
+import { TrashIcon } from '../components/ui/TrashIcon'
+
+type RoomPendingDelete = {
+  _id: string
+  roomname: string
+  roomId: string
+}
 
 export const DashboardPage = () => {
   const navigate = useNavigate()
@@ -15,6 +23,7 @@ export const DashboardPage = () => {
     isLoading: isRoomLoading,
     error: roomError,
     createRoom,
+    deleteRoom,
     getRoomsByUser,
     getOtherUsersRooms,
     clearError: clearRoomError,
@@ -24,6 +33,8 @@ export const DashboardPage = () => {
   const [roomId, setRoomId] = useState('')
   const [roomname, setRoomname] = useState('')
   const [isCreatingRoom, setIsCreatingRoom] = useState(false)
+  const [roomPendingDelete, setRoomPendingDelete] = useState<RoomPendingDelete | null>(null)
+  const [isDeletingRoom, setIsDeletingRoom] = useState(false)
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -70,6 +81,32 @@ export const DashboardPage = () => {
   const handleJoinRoom = (clickedRoomId: string) => {
     setActiveRoomId(clickedRoomId)
     navigate(`/room/${clickedRoomId}`)
+  }
+
+  useEffect(() => {
+    if (!roomPendingDelete) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !isDeletingRoom) {
+        setRoomPendingDelete(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [roomPendingDelete, isDeletingRoom])
+
+  const handleConfirmDeleteRoom = async () => {
+    if (!roomPendingDelete) return
+    setIsDeletingRoom(true)
+    clearRoomError()
+    try {
+      await deleteRoom(roomPendingDelete._id)
+      toast.success('Room deleted')
+      setRoomPendingDelete(null)
+    } catch {
+      // Error is surfaced via room context.
+    } finally {
+      setIsDeletingRoom(false)
+    }
   }
 
   return (
@@ -233,13 +270,29 @@ export const DashboardPage = () => {
                       <p className="text-sm font-medium text-slate-100">{room.roomname}</p>
                       <p className="text-xs text-slate-400">Room ID: {room.roomId}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleJoinRoom(room.roomId)}
-                      className="rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-400"
-                    >
-                      Join
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={`Delete room ${room.roomname}`}
+                        onClick={() =>
+                          setRoomPendingDelete({
+                            _id: room._id,
+                            roomname: room.roomname,
+                            roomId: room.roomId,
+                          })
+                        }
+                        className="inline-flex items-center justify-center rounded-lg border border-red-500/40 p-2 text-red-400 transition hover:border-red-500/70 hover:bg-red-500/10 hover:text-red-300"
+                      >
+                        <TrashIcon />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleJoinRoom(room.roomId)}
+                        className="rounded-lg bg-indigo-500 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-indigo-400"
+                      >
+                        Join
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -257,6 +310,51 @@ export const DashboardPage = () => {
             {roomError}
           </p>
         )}
+
+        {roomPendingDelete ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-room-title"
+          >
+            <button
+              type="button"
+              aria-label="Close"
+              className="absolute inset-0 bg-black/60"
+              disabled={isDeletingRoom}
+              onClick={() => !isDeletingRoom && setRoomPendingDelete(null)}
+            />
+            <div className="relative z-10 w-full max-w-md rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-xl shadow-black/40">
+              <h3 id="delete-room-title" className="text-lg font-semibold text-slate-100">
+                Delete room?
+              </h3>
+              <p className="mt-2 text-sm text-slate-400">
+                This will permanently remove{' '}
+                <span className="font-medium text-slate-200">&quot;{roomPendingDelete.roomname}&quot;</span>{' '}
+                <span className="text-slate-500">({roomPendingDelete.roomId})</span>. This cannot be undone.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  disabled={isDeletingRoom}
+                  onClick={() => setRoomPendingDelete(null)}
+                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeletingRoom}
+                  onClick={() => void handleConfirmDeleteRoom()}
+                  className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isDeletingRoom ? 'Deleting…' : 'Delete room'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </main>
   )

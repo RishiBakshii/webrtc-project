@@ -39,6 +39,12 @@ interface OtherUsersRoomsResponse {
   rooms: Room[]
 }
 
+interface DeleteRoomResponse {
+  message: string
+  _id: string
+  roomId: string
+}
+
 interface RoomContextValue {
   rooms: Room[]
   otherUsersRooms: Room[]
@@ -47,6 +53,8 @@ interface RoomContextValue {
   error: string | null
   setActiveRoomId: (roomId: string | null) => void
   createRoom: (payload: CreateRoomPayload) => Promise<Room>
+  /** MongoDB document `_id` for the room */
+  deleteRoom: (id: string) => Promise<void>
   getRoomsByUser: () => Promise<Room[]>
   getOtherUsersRooms: () => Promise<Room[]>
   clearError: () => void
@@ -78,6 +86,24 @@ export const RoomProvider = ({ children }: PropsWithChildren) => {
       throw err
     } finally {
       setIsLoading(false)
+    }
+  }, [])
+
+  const deleteRoom = useCallback(async (id: string) => {
+    const trimmed = id.trim()
+    if (!trimmed) return
+
+    setError(null)
+    try {
+      const { data } = await axiosi.delete<DeleteRoomResponse>(
+        `/room/${encodeURIComponent(trimmed)}`,
+      )
+      setRooms((prev) => prev.filter((r) => r._id !== data._id))
+      setActiveRoomId((current) => (current === data.roomId ? null : current))
+    } catch (err) {
+      const message = readMessage(err)
+      setError(message)
+      throw err
     }
   }, [])
 
@@ -122,6 +148,7 @@ export const RoomProvider = ({ children }: PropsWithChildren) => {
       error,
       setActiveRoomId,
       createRoom,
+      deleteRoom,
       getRoomsByUser,
       getOtherUsersRooms,
       clearError,
@@ -133,6 +160,7 @@ export const RoomProvider = ({ children }: PropsWithChildren) => {
       isLoading,
       error,
       createRoom,
+      deleteRoom,
       getRoomsByUser,
       getOtherUsersRooms,
       clearError,

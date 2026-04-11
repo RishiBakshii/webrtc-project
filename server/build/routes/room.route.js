@@ -9,3 +9,4 @@ exports.roomRouter.use(auth_middleware_1.authMiddleware);
 exports.roomRouter.post('/', room_controller_1.createRoom);
 exports.roomRouter.get('/', room_controller_1.getRoomsByUser);
 exports.roomRouter.get('/others', room_controller_1.getOtherUsersRooms);
+exports.roomRouter.delete('/:id', room_controller_1.deleteRoom);
