@@ -7,7 +7,7 @@ const developmentConfig:UrlConfig = {
 }
 
 const productionConfig:UrlConfig = {
-    clientUrl:['https://webrtc-project-1-uw8x.onrender.com','http://localhost:5173']
+    clientUrl:['https://webrtc-frontend-jqjv.onrender.com']
 }
 
 const config:UrlConfig = process.env.NODE_ENV === 'production' ? productionConfig : developmentConfig
