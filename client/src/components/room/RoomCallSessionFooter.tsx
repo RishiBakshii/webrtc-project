@@ -7,6 +7,7 @@ export type RoomCallSessionFooterProps = {
   handleCameraToggle: () => void
   isScreenSharing: boolean
   onScreenShareClick: () => void
+  onLeaveClick: () => void
 }
 
 export function RoomCallSessionFooter({
@@ -16,6 +17,7 @@ export function RoomCallSessionFooter({
   handleCameraToggle,
   isScreenSharing,
   onScreenShareClick,
+  onLeaveClick,
 }: RoomCallSessionFooterProps) {
   return (
     <footer className="rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
@@ -61,6 +63,8 @@ export function RoomCallSessionFooter({
 
         <button
           type="button"
+          onClick={onLeaveClick}
+          aria-label="Leave call"
           className="rounded-full bg-red-500/20 px-4 py-2 text-sm font-medium text-red-300 transition hover:bg-red-500/30"
         >
           Leave

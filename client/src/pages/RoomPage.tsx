@@ -1,5 +1,7 @@
 import { useCallback, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
+import { peer } from '../lib/webrtc/peer'
+import { LeaveCallModal } from '../components/room/LeaveCallModal'
 import { RoomCallSession } from '../components/room/RoomCallSession'
 import { RoomPreJoinLobby } from '../components/room/RoomPreJoinLobby'
 import { useSocket } from '../context/socket.context'
@@ -23,8 +25,10 @@ import { useWebRtcOffer } from '../hooks/useWebRtcOffer'
 
 export const RoomPage = () => {
   const { roomId } = useParams()
+  const navigate = useNavigate()
   const { socket } = useSocket()
   const [showLobbyScreen, setShowLobbyScreen] = useState<boolean>(true)
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
   const initiateConnection = !showLobbyScreen
 
   const { offset: selfViewOffset, handlePointerDown: handleSelfViewPointerDown } = useDraggableOverlay()
@@ -57,7 +61,7 @@ export const RoomPage = () => {
     corner: 'nw',
   })
 
-  const { isScreenSharing, toggleScreenShare } = useScreenShare()
+  const { isScreenSharing, toggleScreenShare, stopScreenShare } = useScreenShare()
 
   const [remoteSocketId, setRemoteSocketId] = useState<string | null>(null)
   const [remoteUser, setRemoteUser] = useState<{ userId: string; username: string; email: string } | null>(null)
@@ -116,6 +120,23 @@ export const RoomPage = () => {
     setShowLobbyScreen(false)
   }, [])
 
+  const handleLeaveRequest = useCallback(() => {
+    setShowLeaveModal(true)
+  }, [])
+
+  const handleDismissLeaveModal = useCallback(() => {
+    setShowLeaveModal(false)
+  }, [])
+
+  const handleConfirmLeave = useCallback(() => {
+    if (isScreenSharing) {
+      stopScreenShare()
+    }
+    peer.closeConnection()
+    setShowLeaveModal(false)
+    navigate('/', { replace: true })
+  }, [isScreenSharing, navigate, stopScreenShare])
+
   return (
     <main className="min-h-screen bg-slate-950 p-4 text-slate-100">
       {showLobbyScreen ? (
@@ -158,12 +179,17 @@ export const RoomPage = () => {
           handleSelfViewPointerDown={handleSelfViewPointerDown}
           isScreenSharing={isScreenSharing}
           onScreenShareClick={toggleScreenShare}
+          onLeaveClick={handleLeaveRequest}
           messages={messages}
           chatInput={chatInput}
           setChatInput={setChatInput}
           handleChatSubmit={handleChatSubmit}
         />
       )}
+
+      {showLeaveModal ? (
+        <LeaveCallModal onCancel={handleDismissLeaveModal} onConfirm={handleConfirmLeave} />
+      ) : null}
     </main>
   )
 }

@@ -38,6 +38,7 @@ export type RoomCallSessionProps = {
   handleSelfViewPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   isScreenSharing: boolean
   onScreenShareClick: () => void
+  onLeaveClick: () => void
   messages: RoomChatMessage[]
   chatInput: string
   setChatInput: (value: string) => void
@@ -72,6 +73,7 @@ export function RoomCallSession({
   handleSelfViewPointerDown,
   isScreenSharing,
   onScreenShareClick,
+  onLeaveClick,
   messages,
   chatInput,
   setChatInput,
@@ -250,6 +252,7 @@ export function RoomCallSession({
           handleCameraToggle={handleCameraToggle}
           isScreenSharing={isScreenSharing}
           onScreenShareClick={onScreenShareClick}
+          onLeaveClick={onLeaveClick}
         />
       </section>
 
