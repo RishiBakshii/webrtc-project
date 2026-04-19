@@ -5,8 +5,6 @@ import { LeaveCallModal } from '../components/room/LeaveCallModal'
 import { RoomCallSession } from '../components/room/RoomCallSession'
 import { RoomPreJoinLobby } from '../components/room/RoomPreJoinLobby'
 import { useSocket } from '../context/socket.context'
-import { useDraggableOverlay } from '../hooks/useDraggableOverlay'
-import { useResizablePip } from '../hooks/useResizablePip'
 import { useScreenShare } from '../hooks/useScreenShare'
 import { useIceCandidateListener } from '../hooks/useIceCandidateListener'
 import { useJoinRoom } from '../hooks/useJoinRoom'
@@ -30,36 +28,6 @@ export const RoomPage = () => {
   const [showLobbyScreen, setShowLobbyScreen] = useState<boolean>(true)
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const initiateConnection = !showLobbyScreen
-
-  const { offset: selfViewOffset, handlePointerDown: handleSelfViewPointerDown } = useDraggableOverlay()
-  const {
-    offset: remoteScreenShareOffset,
-    handlePointerDown: handleRemoteScreenSharePointerDown,
-  } = useDraggableOverlay()
-
-  const {
-    widthPx: remoteScreenPipWidth,
-    heightPx: remoteScreenPipHeight,
-    handleResizePointerDown: handleRemoteScreenPipResizePointerDown,
-  } = useResizablePip({
-    aspectRatio: 16 / 9,
-    minWidth: 200,
-    maxWidth: 1600,
-    initialWidth: 352,
-    corner: 'se',
-  })
-
-  const {
-    widthPx: selfPipWidth,
-    heightPx: selfPipHeight,
-    handleResizePointerDown: handleSelfPipResizePointerDown,
-  } = useResizablePip({
-    aspectRatio: 16 / 9,
-    minWidth: 120,
-    maxWidth: 1600,
-    initialWidth: 200,
-    corner: 'nw',
-  })
 
   const { isScreenSharing, toggleScreenShare, stopScreenShare } = useScreenShare()
 
@@ -158,14 +126,6 @@ export const RoomPage = () => {
           remoteAudioStream={remoteAudioStream}
           remoteVideoStream={remoteVideoStream}
           remoteScreenShareStream={remoteScreenShareStream}
-          remoteScreenShareOffset={remoteScreenShareOffset}
-          handleRemoteScreenSharePointerDown={handleRemoteScreenSharePointerDown}
-          remoteScreenPipWidth={remoteScreenPipWidth}
-          remoteScreenPipHeight={remoteScreenPipHeight}
-          handleRemoteScreenPipResizePointerDown={handleRemoteScreenPipResizePointerDown}
-          selfPipWidth={selfPipWidth}
-          selfPipHeight={selfPipHeight}
-          handleSelfPipResizePointerDown={handleSelfPipResizePointerDown}
           remoteUser={remoteUser}
           remoteStream={remoteStream}
           remoteSocketId={remoteSocketId}
@@ -175,8 +135,6 @@ export const RoomPage = () => {
           isCameraOn={isCameraOn}
           handleMicToggle={handleMicToggle}
           handleCameraToggle={handleCameraToggle}
-          selfViewOffset={selfViewOffset}
-          handleSelfViewPointerDown={handleSelfViewPointerDown}
           isScreenSharing={isScreenSharing}
           onScreenShareClick={toggleScreenShare}
           onLeaveClick={handleLeaveRequest}

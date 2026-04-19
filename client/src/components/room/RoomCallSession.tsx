@@ -1,12 +1,10 @@
-import { useEffect, useState, type FormEvent, type PointerEvent as ReactPointerEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../context/auth.context'
 import type { RoomChatMessage } from '../../hooks/useRoomChat'
 import { ChatSidebarContent } from './ChatSidebarContent'
-import { CameraIcon, MicIcon } from './CallControlIcons'
+import { MicIcon } from './CallControlIcons'
 import { RoomCallSessionFooter } from './RoomCallSessionFooter'
-
-type Offset = { x: number; y: number }
 
 type RemoteUser = { userId: string; username: string; email: string }
 
@@ -17,14 +15,6 @@ export type RoomCallSessionProps = {
   remoteAudioStream: MediaStream | null
   remoteVideoStream: MediaStream | null
   remoteScreenShareStream: MediaStream | null
-  remoteScreenShareOffset: Offset
-  handleRemoteScreenSharePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
-  remoteScreenPipWidth: number
-  remoteScreenPipHeight: number
-  handleRemoteScreenPipResizePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
-  selfPipWidth: number
-  selfPipHeight: number
-  handleSelfPipResizePointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   remoteUser: RemoteUser | null
   remoteStream: MediaStream | null
   remoteSocketId: string | null
@@ -34,8 +24,6 @@ export type RoomCallSessionProps = {
   isCameraOn: boolean
   handleMicToggle: () => void
   handleCameraToggle: () => void
-  selfViewOffset: Offset
-  handleSelfViewPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void
   isScreenSharing: boolean
   onScreenShareClick: () => void
   onLeaveClick: () => void
@@ -45,6 +33,24 @@ export type RoomCallSessionProps = {
   handleChatSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 
+function isRemoteMicLive(remoteAudioStream: MediaStream | null) {
+  return Boolean(
+    remoteAudioStream?.getAudioTracks().some((t) => t.enabled && t.readyState === 'live'),
+  )
+}
+
+/** First letter for Meet-style avatar tiles (username, else email local-part). */
+function userInitial(username: string | undefined, email: string | undefined) {
+  const name = username?.trim()
+  if (name) return name.charAt(0).toUpperCase()
+  const em = email?.trim()
+  if (em) {
+    const local = em.split('@')[0]
+    if (local) return local.charAt(0).toUpperCase()
+  }
+  return '?'
+}
+
 export function RoomCallSession({
   roomId,
   isRemoteMicEnabled: _isRemoteMicEnabled,
@@ -52,16 +58,8 @@ export function RoomCallSession({
   remoteAudioStream,
   remoteVideoStream,
   remoteScreenShareStream,
-  remoteScreenShareOffset,
-  handleRemoteScreenSharePointerDown,
-  remoteScreenPipWidth,
-  remoteScreenPipHeight,
-  handleRemoteScreenPipResizePointerDown,
-  selfPipWidth,
-  selfPipHeight,
-  handleSelfPipResizePointerDown,
   remoteUser,
-  remoteStream,
+  remoteStream: _remoteStream,
   remoteSocketId,
   hasLiveRemoteVideo,
   myStream,
@@ -69,8 +67,6 @@ export function RoomCallSession({
   isCameraOn,
   handleMicToggle,
   handleCameraToggle,
-  selfViewOffset,
-  handleSelfViewPointerDown,
   isScreenSharing,
   onScreenShareClick,
   onLeaveClick,
@@ -102,17 +98,12 @@ export function RoomCallSession({
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isMobileChatOpen])
 
+  const remoteMicLive = isRemoteMicLive(remoteAudioStream)
+  const localInitial = userInitial(user?.username, user?.email)
+
   return (
     <div className="flex h-[calc(100dvh-0.5rem)] w-full max-lg:gap-1.5 lg:h-[calc(100vh-2rem)] lg:gap-4">
       <section className="flex min-w-0 flex-1 flex-col gap-1.5 lg:gap-4">
-        {/* <RoomCallSessionDebugPanel
-          isRemoteMicEnabled={isRemoteMicEnabled}
-          isRemoteCameraEnabled={isRemoteCameraEnabled}
-          remoteAudioStream={remoteAudioStream}
-          remoteVideoStream={remoteVideoStream}
-          remoteScreenShareStream={remoteScreenShareStream}
-        /> */}
-
         <header className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/70 bg-slate-900/70 px-2.5 py-2 max-lg:shadow-sm lg:gap-3 lg:rounded-2xl lg:border-slate-800 lg:px-4 lg:py-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-indigo-400">Room</p>
@@ -140,135 +131,114 @@ export function RoomCallSession({
           </div>
         </header>
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center rounded-lg border border-slate-800/60 bg-slate-900/70 p-1 lg:rounded-2xl lg:border-slate-800 lg:p-4">
-          <div className="flex h-full min-h-[min(260px,50dvh)] w-full items-center justify-center rounded-md border border-dashed border-slate-700/60 bg-slate-950 lg:min-h-[380px] lg:rounded-xl lg:border-slate-700">
-            <div className="flex flex-col items-center gap-3">
-              {remoteUser || Boolean(remoteStream) || Boolean(remoteSocketId) ? (
-                <div className="flex flex-col items-center gap-3">
-                  {remoteSocketId && !hasLiveRemoteVideo ? (
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full border border-slate-700 bg-slate-800/80">
-                      <span className="text-xl font-semibold text-slate-200">
-                        {(remoteUser?.username?.trim()?.charAt(0) || '?').toUpperCase()}
+        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-slate-800/60 bg-slate-900/70 p-1 lg:rounded-2xl lg:border-slate-800 lg:p-3">
+          <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-2">
+            {remoteScreenShareStream ? (
+              <div className="relative min-h-0 w-full max-h-[42dvh] shrink-0 overflow-hidden rounded-md border border-cyan-500/35 bg-black lg:max-h-[45vh] lg:rounded-xl">
+                <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-md border border-cyan-500/30 bg-slate-950/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200/90">
+                  Their screen
+                </div>
+                <video
+                  autoPlay
+                  playsInline
+                  className="h-full w-full object-contain"
+                  ref={(video) => {
+                    if (video) video.srcObject = remoteScreenShareStream
+                  }}
+                />
+              </div>
+            ) : null}
+
+            <div
+              className={`grid min-h-0 min-w-0 flex-1 gap-2 ${
+                remoteScreenShareStream
+                  ? 'grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1'
+                  : 'grid-cols-1 grid-rows-2 sm:grid-cols-2 sm:grid-rows-1'
+              }`}
+            >
+              {/* Remote participant */}
+              <div className="relative flex min-h-[min(200px,32dvh)] min-w-0 flex-col overflow-hidden rounded-md border border-slate-700/80 bg-slate-950 sm:min-h-0 lg:rounded-xl">
+                {!remoteSocketId ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-8">
+                    <p className="text-center text-sm text-slate-500">Waiting for other person...</p>
+                    <div className="flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:-0.3s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:-0.15s]" />
+                      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500" />
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {hasLiveRemoteVideo && remoteVideoStream ? (
+                      <video
+                        autoPlay
+                        playsInline
+                        className="absolute inset-0 h-full w-full object-cover"
+                        ref={(video) => {
+                          if (video) video.srcObject = remoteVideoStream
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-slate-950">
+                        <div
+                          className="flex aspect-square w-[min(42%,7.5rem)] max-w-30 items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                          aria-hidden
+                        >
+                          <span className="text-[clamp(1.75rem,10vmin,2.75rem)] font-semibold leading-none tracking-tight text-white">
+                            {(remoteUser?.username?.trim()?.charAt(0) || '?').toUpperCase()}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+                {remoteSocketId ? (
+                  <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/80 via-black/40 to-transparent px-2 pb-2 pt-10">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-xs font-medium text-slate-100">
+                        {remoteUser?.username ?? 'Guest'}
+                      </span>
+                      <span className={remoteMicLive ? 'text-slate-200' : 'text-red-400'}>
+                        <MicIcon muted={!remoteMicLive} />
                       </span>
                     </div>
-                  ) : null}
-                  <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1.5">
-                    <p className="text-sm text-slate-300">{remoteUser?.username}</p>
-                    <span
-                      className={
-                        remoteAudioStream
-                          ?.getAudioTracks()
-                          .some((track) => track.enabled && track.readyState === 'live')
-                          ? 'text-slate-300'
-                          : 'text-red-300'
-                      }
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Local participant */}
+              <div className="relative flex min-h-[min(200px,32dvh)] min-w-0 flex-col overflow-hidden rounded-md border border-slate-700/80 bg-slate-950 sm:min-h-0 lg:rounded-xl">
+                {isCameraOn && myStream ? (
+                  <video
+                    autoPlay
+                    muted
+                    playsInline
+                    className="absolute inset-0 h-full w-full object-cover"
+                    ref={(video) => {
+                      if (video) video.srcObject = myStream
+                    }}
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center bg-slate-950">
+                    <div
+                      className="flex aspect-square w-[min(42%,7.5rem)] max-w-30 items-center justify-center rounded-full border border-slate-600/50 bg-slate-800/95 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                      aria-hidden
                     >
-                      <MicIcon
-                        muted={
-                          !remoteAudioStream
-                            ?.getAudioTracks()
-                            .some((track) => track.enabled && track.readyState === 'live')
-                        }
-                      />
+                      <span className="text-[clamp(1.75rem,10vmin,2.75rem)] font-semibold leading-none tracking-tight text-white">
+                        {localInitial}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 bg-linear-to-t from-black/80 via-black/40 to-transparent px-2 pb-2 pt-10">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-xs font-medium text-slate-100">You</span>
+                    <span className={isMicOn ? 'text-slate-200' : 'text-red-400'}>
+                      <MicIcon muted={!isMicOn} />
                     </span>
                   </div>
                 </div>
-              ) : (
-                <>
-                  <p className="text-sm text-slate-500">Waiting for other person...</p>
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:-0.3s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500 [animation-delay:-0.15s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-500" />
-                  </div>
-                </>
-              )}
-            </div>
-            {hasLiveRemoteVideo && remoteVideoStream ? (
-              <video
-                autoPlay
-                playsInline
-                className="absolute inset-0 h-full w-full rounded-md object-cover lg:rounded-xl"
-                ref={(video) => {
-                  if (video) video.srcObject = remoteVideoStream
-                }}
-              />
-            ) : remoteSocketId ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-slate-950/80 lg:rounded-xl">
-                <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-slate-300">
-                  <CameraIcon off />
-                  <span className="text-sm">Camera off</span>
-                </div>
               </div>
-            ) : null}
-          </div>
-
-          {remoteScreenShareStream ? (
-            <div
-              className="absolute left-2 top-2 z-10 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-lg border border-cyan-500/35 bg-slate-950/95 shadow-lg shadow-black/40 lg:left-4 lg:top-4 lg:rounded-xl lg:border-cyan-500/40"
-              onPointerDown={handleRemoteScreenSharePointerDown}
-              style={{
-                width: remoteScreenPipWidth,
-                height: remoteScreenPipHeight,
-                transform: `translate(${remoteScreenShareOffset.x}px, ${remoteScreenShareOffset.y}px)`,
-              }}
-            >
-              <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-md border border-cyan-500/30 bg-slate-950/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-cyan-200/90">
-                Their screen
-              </div>
-              <video
-                autoPlay
-                playsInline
-                className="h-full w-full bg-black object-contain"
-                ref={(video) => {
-                  if (video) video.srcObject = remoteScreenShareStream
-                }}
-              />
-              <div
-                className="absolute bottom-0 right-0 z-20 h-6 w-6 cursor-nwse-resize touch-none rounded-tl-md border-l border-t border-cyan-500/40 bg-slate-950/90"
-                onPointerDown={handleRemoteScreenPipResizePointerDown}
-                aria-label="Resize their screen preview"
-                role="separator"
-              />
-            </div>
-          ) : null}
-
-          <div
-            className="absolute bottom-2 right-2 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-lg border border-slate-700/80 bg-slate-950/90 shadow-lg shadow-black/30 lg:bottom-4 lg:right-4 lg:rounded-xl lg:border-slate-700"
-            onPointerDown={handleSelfViewPointerDown}
-            style={{
-              width: selfPipWidth,
-              height: selfPipHeight,
-              transform: `translate(${selfViewOffset.x}px, ${selfViewOffset.y}px)`,
-            }}
-          >
-            <div
-              className="absolute left-0 top-0 z-20 h-6 w-6 cursor-nesw-resize touch-none rounded-br-md border-b border-r border-slate-600/80 bg-slate-950/90"
-              onPointerDown={handleSelfPipResizePointerDown}
-              aria-label="Resize your camera preview"
-              role="separator"
-            />
-            {isCameraOn && myStream ? (
-              <video
-                autoPlay
-                muted
-                playsInline
-                className="h-full w-full object-cover"
-                ref={(video) => {
-                  if (video) video.srcObject = myStream
-                }}
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <p className="text-sm font-medium text-slate-300">
-                  {!isCameraOn && isMicOn ? 'You (audio only)' : 'You'}
-                </p>
-              </div>
-            )}
-            <div className="absolute bottom-2 left-2 rounded-full border border-slate-700 bg-slate-900/80 p-1">
-              <span className={isMicOn ? 'text-slate-300' : 'text-red-300'}>
-                <MicIcon muted={!isMicOn} />
-              </span>
             </div>
           </div>
 
