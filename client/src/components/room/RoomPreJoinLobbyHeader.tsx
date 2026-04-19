@@ -9,7 +9,7 @@ export function RoomPreJoinLobbyHeader({ roomId }: RoomPreJoinLobbyHeaderProps) 
   const { user } = useAuth()
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-0.5 max-lg:gap-2 lg:gap-4">
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-indigo-400">Join meeting</p>
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-100">
@@ -19,7 +19,7 @@ export function RoomPreJoinLobbyHeader({ roomId }: RoomPreJoinLobbyHeaderProps) 
       </div>
       <Link
         to="/"
-        className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+        className="rounded-md border border-slate-700/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-800 max-lg:shrink-0 lg:rounded-lg lg:border-slate-700 lg:px-4 lg:py-2 lg:text-sm"
       >
         Back to dashboard
       </Link>

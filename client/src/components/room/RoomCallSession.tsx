@@ -103,8 +103,8 @@ export function RoomCallSession({
   }, [isMobileChatOpen])
 
   return (
-    <div className="flex h-[calc(100vh-2rem)] w-full gap-4">
-      <section className="flex min-w-0 flex-1 flex-col gap-4">
+    <div className="flex h-[calc(100dvh-0.5rem)] w-full max-lg:gap-1.5 lg:h-[calc(100vh-2rem)] lg:gap-4">
+      <section className="flex min-w-0 flex-1 flex-col gap-1.5 lg:gap-4">
         {/* <RoomCallSessionDebugPanel
           isRemoteMicEnabled={isRemoteMicEnabled}
           isRemoteCameraEnabled={isRemoteCameraEnabled}
@@ -113,7 +113,7 @@ export function RoomCallSession({
           remoteScreenShareStream={remoteScreenShareStream}
         /> */}
 
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900/70 px-4 py-3">
+        <header className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-800/70 bg-slate-900/70 px-2.5 py-2 max-lg:shadow-sm lg:gap-3 lg:rounded-2xl lg:border-slate-800 lg:px-4 lg:py-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-indigo-400">Room</p>
             <h1 className="text-lg font-semibold">{roomId}</h1>
@@ -122,7 +122,7 @@ export function RoomCallSession({
             <button
               type="button"
               onClick={() => setIsMobileChatOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/80 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-800 lg:hidden"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-700/80 bg-slate-950/80 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:bg-slate-800 lg:hidden"
               aria-expanded={isMobileChatOpen}
               aria-controls="mobile-chat-drawer"
             >
@@ -133,15 +133,15 @@ export function RoomCallSession({
             </button>
             <Link
               to="/"
-              className="rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-800"
+              className="rounded-md border border-slate-700/80 px-2 py-1 text-[11px] font-medium text-slate-200 transition hover:bg-slate-800 max-lg:shrink-0 lg:rounded-lg lg:border-slate-700 lg:px-3 lg:py-1.5 lg:text-xs"
             >
               Back to dashboard
             </Link>
           </div>
         </header>
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="flex h-full min-h-[380px] w-full items-center justify-center rounded-xl border border-dashed border-slate-700 bg-slate-950">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center rounded-lg border border-slate-800/60 bg-slate-900/70 p-1 lg:rounded-2xl lg:border-slate-800 lg:p-4">
+          <div className="flex h-full min-h-[min(260px,50dvh)] w-full items-center justify-center rounded-md border border-dashed border-slate-700/60 bg-slate-950 lg:min-h-[380px] lg:rounded-xl lg:border-slate-700">
             <div className="flex flex-col items-center gap-3">
               {remoteUser || Boolean(remoteStream) || Boolean(remoteSocketId) ? (
                 <div className="flex flex-col items-center gap-3">
@@ -188,13 +188,13 @@ export function RoomCallSession({
               <video
                 autoPlay
                 playsInline
-                className="absolute inset-0 h-full w-full rounded-xl object-cover"
+                className="absolute inset-0 h-full w-full rounded-md object-cover lg:rounded-xl"
                 ref={(video) => {
                   if (video) video.srcObject = remoteVideoStream
                 }}
               />
             ) : remoteSocketId ? (
-              <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-slate-950/80">
+              <div className="absolute inset-0 flex items-center justify-center rounded-md bg-slate-950/80 lg:rounded-xl">
                 <div className="flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/70 px-3 py-1.5 text-slate-300">
                   <CameraIcon off />
                   <span className="text-sm">Camera off</span>
@@ -205,7 +205,7 @@ export function RoomCallSession({
 
           {remoteScreenShareStream ? (
             <div
-              className="absolute left-4 top-4 z-10 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-xl border border-cyan-500/40 bg-slate-950/95 shadow-lg shadow-black/40"
+              className="absolute left-2 top-2 z-10 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-lg border border-cyan-500/35 bg-slate-950/95 shadow-lg shadow-black/40 lg:left-4 lg:top-4 lg:rounded-xl lg:border-cyan-500/40"
               onPointerDown={handleRemoteScreenSharePointerDown}
               style={{
                 width: remoteScreenPipWidth,
@@ -234,7 +234,7 @@ export function RoomCallSession({
           ) : null}
 
           <div
-            className="absolute bottom-4 right-4 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-xl border border-slate-700 bg-slate-950/90 shadow-lg shadow-black/30"
+            className="absolute bottom-2 right-2 max-w-[min(100%,90vw)] cursor-move overflow-hidden rounded-lg border border-slate-700/80 bg-slate-950/90 shadow-lg shadow-black/30 lg:bottom-4 lg:right-4 lg:rounded-xl lg:border-slate-700"
             onPointerDown={handleSelfViewPointerDown}
             style={{
               width: selfPipWidth,
@@ -318,7 +318,7 @@ export function RoomCallSession({
 
       <aside
         id="mobile-chat-drawer"
-        className={`fixed inset-y-0 right-0 z-50 flex min-h-0 w-[min(100vw,22rem)] max-w-full flex-col border-l border-slate-800 bg-slate-900 p-4 shadow-2xl shadow-black/50 transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed inset-y-0 right-0 z-50 flex min-h-0 w-full max-w-full flex-col border-l border-slate-800/60 bg-slate-900 p-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-[max(0.5rem,env(safe-area-inset-top))] shadow-2xl shadow-black/50 transition-transform duration-300 ease-out sm:max-w-sm sm:border-slate-800 lg:hidden ${
           isMobileChatOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
         aria-hidden={!isMobileChatOpen}

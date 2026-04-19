@@ -25,10 +25,10 @@ export function RoomPreJoinLobby({
   const userMediaAccessible = Boolean(myStream)
 
   return (
-    <div className="mx-auto flex min-h-[calc(100vh-2rem)] w-full max-w-3xl flex-col gap-8 py-8">
+    <div className="mx-auto flex min-h-[calc(100dvh-0.5rem)] w-full max-w-3xl flex-col gap-4 py-3 max-lg:px-0 sm:gap-6 sm:py-6 lg:min-h-[calc(100vh-2rem)] lg:gap-8 lg:py-8">
       <RoomPreJoinLobbyHeader roomId={roomId} />
 
-      <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/70 shadow-xl shadow-black/30">
+      <div className="overflow-hidden rounded-xl border border-slate-800/70 bg-slate-900/70 shadow-lg shadow-black/20 lg:rounded-2xl lg:border-slate-800 lg:shadow-xl lg:shadow-black/30">
         <div className="relative aspect-video w-full bg-slate-950">
           {isCameraOn && myStream ? (
             <video
@@ -79,7 +79,7 @@ export function RoomPreJoinLobby({
           </div>
         </div>
 
-        <div className="border-t border-slate-800 p-6">
+        <div className="border-t border-slate-800/80 p-3 max-lg:border-slate-800/60 lg:p-6">
           {mediaError ? (
             <p className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
               {mediaError}. Allow access in your browser settings to continue.

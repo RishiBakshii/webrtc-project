@@ -138,7 +138,7 @@ export const RoomPage = () => {
   }, [isScreenSharing, navigate, stopScreenShare])
 
   return (
-    <main className="min-h-screen bg-slate-950 p-4 text-slate-100">
+    <main className="min-h-[100dvh] min-h-screen bg-slate-950 px-1.5 py-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-[max(0.25rem,env(safe-area-inset-top))] text-slate-100 lg:p-4 lg:pb-4 lg:pt-4">
       {showLobbyScreen ? (
         <RoomPreJoinLobby
           roomId={roomId}
